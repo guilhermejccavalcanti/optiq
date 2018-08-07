@@ -18,7 +18,6 @@
 package org.eigenbase.rel.rules;
 
 import java.util.*;
-
 import org.eigenbase.rel.CalcRel;
 import org.eigenbase.rel.JoinRel;
 import org.eigenbase.rel.JoinRelType;
@@ -28,6 +27,7 @@ import org.eigenbase.rex.*;
 import org.eigenbase.util.Util;
 import org.eigenbase.util.mapping.MappingType;
 import org.eigenbase.util.mapping.Mappings;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Rule that pushes the right input of a join into through the left input of
@@ -53,18 +53,15 @@ import org.eigenbase.util.mapping.Mappings;
  * ({@code ON TRUE}). After the rule, each join has one condition.</p>
  */
 public class PushJoinThroughJoinRule extends RelOptRule {
-    public static final RelOptRule RIGHT =
-        new PushJoinThroughJoinRule("PushJoinThroughJoinRule:right", true);
-    public static final RelOptRule LEFT =
-        new PushJoinThroughJoinRule("PushJoinThroughJoinRule:left", false);
+
+    public static final RelOptRule RIGHT = new PushJoinThroughJoinRule("PushJoinThroughJoinRule:right", true);
+
+    public static final RelOptRule LEFT = new PushJoinThroughJoinRule("PushJoinThroughJoinRule:left", false);
 
     private final boolean right;
 
     private PushJoinThroughJoinRule(String description, boolean right) {
-        super(
-            some(
-                JoinRel.class, any(JoinRel.class), any(RelNode.class)),
-            description);
+        super(some(JoinRel.class, any(JoinRel.class), any(RelNode.class)), description);
         this.right = right;
     }
 
@@ -84,102 +81,53 @@ public class PushJoinThroughJoinRule extends RelOptRule {
         final RelNode relA = bottomJoin.getLeft();
         final RelNode relB = bottomJoin.getRight();
         final RelOptCluster cluster = topJoin.getCluster();
-
         //        topJoin
         //        /     \
         //   bottomJoin  C
         //    /    \
         //   A      B
-
         final int aCount = relA.getRowType().getFieldCount();
         final int bCount = relB.getRowType().getFieldCount();
         final int cCount = relC.getRowType().getFieldCount();
         final BitSet bBitSet = Util.bitSetBetween(aCount, aCount + bCount);
-
-        // becomes
-        //
-        //        newTopJoin
-        //        /        \
-        //   newBottomJoin  B
-        //    /    \
-        //   A      C
-
-        // If either join is not inner, we cannot proceed.
         // (Is this too strict?)
-        if (topJoin.getJoinType() != JoinRelType.INNER
-            || bottomJoin.getJoinType() != JoinRelType.INNER)
-        {
+        if (topJoin.getJoinType() != JoinRelType.INNER || bottomJoin.getJoinType() != JoinRelType.INNER) {
             return;
         }
-
         // Split the condition of topJoin into a conjunction. Each of the
         // parts that does not use columns from B can be pushed down.
         final List<RexNode> intersecting = new ArrayList<RexNode>();
         final List<RexNode> nonIntersecting = new ArrayList<RexNode>();
         split(topJoin.getCondition(), bBitSet, intersecting, nonIntersecting);
-
         // If there's nothing to push down, it's not worth proceeding.
         if (nonIntersecting.isEmpty()) {
             return;
         }
-
         // Split the condition of bottomJoin into a conjunction. Each of the
         // parts that use columns from B will need to be pulled up.
         final List<RexNode> bottomIntersecting = new ArrayList<RexNode>();
         final List<RexNode> bottomNonIntersecting = new ArrayList<RexNode>();
-        split(
-            bottomJoin.getCondition(), bBitSet, bottomIntersecting,
-            bottomNonIntersecting);
-
+        split(bottomJoin.getCondition(), bBitSet, bottomIntersecting, bottomNonIntersecting);
         // target: | A       | C      |
         // source: | A       | B | C      |
-        final Mappings.TargetMapping bottomMapping =
-            createShiftMapping(
-                aCount + bCount + cCount,
-                0, 0, aCount,
-                aCount, aCount + bCount, cCount);
+        final Mappings.TargetMapping bottomMapping = createShiftMapping(aCount + bCount + cCount, 0, 0, aCount, aCount, aCount + bCount, cCount);
         List<RexNode> newBottomList = new ArrayList<RexNode>();
-        new RexPermuteInputsShuttle(bottomMapping, relA, relC)
-            .visitList(nonIntersecting, newBottomList);
-        final Mappings.TargetMapping bottomBottomMapping =
-            createShiftMapping(
-                aCount + bCount,
-                0, 0, aCount);
-        new RexPermuteInputsShuttle(bottomBottomMapping, relA, relC)
-            .visitList(bottomNonIntersecting, newBottomList);
+        new RexPermuteInputsShuttle(bottomMapping, relA, relC).visitList(nonIntersecting, newBottomList);
+        final Mappings.TargetMapping bottomBottomMapping = createShiftMapping(aCount + bCount, 0, 0, aCount);
+        new RexPermuteInputsShuttle(bottomBottomMapping, relA, relC).visitList(bottomNonIntersecting, newBottomList);
         final RexBuilder rexBuilder = cluster.getRexBuilder();
-        RexNode newBottomCondition =
-            RexUtil.composeConjunction(rexBuilder, newBottomList, false);
-        final JoinRel newBottomJoin =
-            new JoinRel(
-                cluster, relA, relC, newBottomCondition,
-                JoinRelType.INNER, Collections.<String>emptySet());
-
+        RexNode newBottomCondition = RexUtil.composeConjunction(rexBuilder, newBottomList, false);
+        final JoinRel newBottomJoin = new JoinRel(cluster, relA, relC, newBottomCondition, JoinRelType.INNER, ImmutableSet.<String>of());
         // target: | A       | C      | B |
         // source: | A       | B | C      |
-        final Mappings.TargetMapping topMapping =
-            createShiftMapping(
-                aCount + bCount + cCount,
-                0, 0, aCount,
-                aCount + cCount, aCount, bCount,
-                aCount, aCount + bCount, cCount);
+        final Mappings.TargetMapping topMapping = createShiftMapping(aCount + bCount + cCount, 0, 0, aCount, aCount + cCount, aCount, bCount, aCount, aCount + bCount, cCount);
         List<RexNode> newTopList = new ArrayList<RexNode>();
-        new RexPermuteInputsShuttle(topMapping, newBottomJoin, relB)
-            .visitList(intersecting, newTopList);
-        new RexPermuteInputsShuttle(topMapping, newBottomJoin, relB)
-            .visitList(bottomIntersecting, newTopList);
-        RexNode newTopCondition =
-            RexUtil.composeConjunction(rexBuilder, newTopList, false);
-        @SuppressWarnings("SuspiciousNameCombination")
-        final JoinRel newTopJoin =
-            new JoinRel(
-                cluster, newBottomJoin, relB, newTopCondition,
-                JoinRelType.INNER, Collections.<String>emptySet());
-
-      assert !Mappings.isIdentity(topMapping);
-        final RelNode newProject =
-            CalcRel.createProject(newTopJoin, Mappings.asList(topMapping));
-
+        new RexPermuteInputsShuttle(topMapping, newBottomJoin, relB).visitList(intersecting, newTopList);
+        new RexPermuteInputsShuttle(topMapping, newBottomJoin, relB).visitList(bottomIntersecting, newTopList);
+        RexNode newTopCondition = RexUtil.composeConjunction(rexBuilder, newTopList, false);
+        @SuppressWarnings("SuspiciousNameCombination") final JoinRel newTopJoin = new JoinRel(cluster, newBottomJoin, relB, newTopCondition, JoinRelType.INNER, ImmutableSet.<String>of());
+        assert !Mappings.isIdentity(topMapping);
+        final RelNode newProject = CalcRel.createProject(newTopJoin, Mappings.asList(topMapping));
         call.transformTo(newProject);
     }
 
@@ -192,113 +140,58 @@ public class PushJoinThroughJoinRule extends RelOptRule {
         final RelNode relA = bottomJoin.getLeft();
         final RelNode relB = bottomJoin.getRight();
         final RelOptCluster cluster = topJoin.getCluster();
-
         //        topJoin
         //        /     \
         //   bottomJoin  C
         //    /    \
         //   A      B
-
         final int aCount = relA.getRowType().getFieldCount();
         final int bCount = relB.getRowType().getFieldCount();
         final int cCount = relC.getRowType().getFieldCount();
         final BitSet aBitSet = Util.bitSetBetween(0, aCount);
-
-        // becomes
-        //
-        //        newTopJoin
-        //        /        \
-        //   newBottomJoin  A
-        //    /    \
-        //   C      B
-
-        // If either join is not inner, we cannot proceed.
         // (Is this too strict?)
-        if (topJoin.getJoinType() != JoinRelType.INNER
-            || bottomJoin.getJoinType() != JoinRelType.INNER)
-        {
+        if (topJoin.getJoinType() != JoinRelType.INNER || bottomJoin.getJoinType() != JoinRelType.INNER) {
             return;
         }
-
         // Split the condition of topJoin into a conjunction. Each of the
         // parts that does not use columns from A can be pushed down.
         final List<RexNode> intersecting = new ArrayList<RexNode>();
         final List<RexNode> nonIntersecting = new ArrayList<RexNode>();
         split(topJoin.getCondition(), aBitSet, intersecting, nonIntersecting);
-
         // If there's nothing to push down, it's not worth proceeding.
         if (nonIntersecting.isEmpty()) {
             return;
         }
-
         // Split the condition of bottomJoin into a conjunction. Each of the
         // parts that use columns from B will need to be pulled up.
         final List<RexNode> bottomIntersecting = new ArrayList<RexNode>();
         final List<RexNode> bottomNonIntersecting = new ArrayList<RexNode>();
-        split(
-            bottomJoin.getCondition(), aBitSet, bottomIntersecting,
-            bottomNonIntersecting);
-
+        split(bottomJoin.getCondition(), aBitSet, bottomIntersecting, bottomNonIntersecting);
         // target: | C      | B |
         // source: | A       | B | C      |
-        final Mappings.TargetMapping bottomMapping =
-            createShiftMapping(
-                aCount + bCount + cCount,
-                cCount, aCount, bCount,
-                0, aCount + bCount, cCount);
+        final Mappings.TargetMapping bottomMapping = createShiftMapping(aCount + bCount + cCount, cCount, aCount, bCount, 0, aCount + bCount, cCount);
         List<RexNode> newBottomList = new ArrayList<RexNode>();
-        new RexPermuteInputsShuttle(bottomMapping, relC, relB)
-            .visitList(nonIntersecting, newBottomList);
-        final Mappings.TargetMapping bottomBottomMapping =
-            createShiftMapping(
-                aCount + bCount + cCount,
-                0, aCount + bCount, cCount,
-                cCount, aCount, bCount);
-        new RexPermuteInputsShuttle(bottomBottomMapping, relC, relB)
-            .visitList(bottomNonIntersecting, newBottomList);
+        new RexPermuteInputsShuttle(bottomMapping, relC, relB).visitList(nonIntersecting, newBottomList);
+        final Mappings.TargetMapping bottomBottomMapping = createShiftMapping(aCount + bCount + cCount, 0, aCount + bCount, cCount, cCount, aCount, bCount);
+        new RexPermuteInputsShuttle(bottomBottomMapping, relC, relB).visitList(bottomNonIntersecting, newBottomList);
         final RexBuilder rexBuilder = cluster.getRexBuilder();
-        RexNode newBottomCondition =
-            RexUtil.composeConjunction(rexBuilder, newBottomList, false);
-        final JoinRel newBottomJoin =
-            new JoinRel(
-                cluster, relC, relB, newBottomCondition,
-                JoinRelType.INNER, Collections.<String>emptySet());
-
+        RexNode newBottomCondition = RexUtil.composeConjunction(rexBuilder, newBottomList, false);
+        final JoinRel newBottomJoin = new JoinRel(cluster, relC, relB, newBottomCondition, JoinRelType.INNER, ImmutableSet.<String>of());
         // target: | C      | B | A       |
         // source: | A       | B | C      |
-        final Mappings.TargetMapping topMapping =
-            createShiftMapping(
-                aCount + bCount + cCount,
-                cCount + bCount, 0, aCount,
-                cCount, aCount, bCount,
-                0, aCount + bCount, cCount);
+        final Mappings.TargetMapping topMapping = createShiftMapping(aCount + bCount + cCount, cCount + bCount, 0, aCount, cCount, aCount, bCount, 0, aCount + bCount, cCount);
         List<RexNode> newTopList = new ArrayList<RexNode>();
-        new RexPermuteInputsShuttle(topMapping, newBottomJoin, relA)
-            .visitList(intersecting, newTopList);
-        new RexPermuteInputsShuttle(topMapping, newBottomJoin, relA)
-            .visitList(bottomIntersecting, newTopList);
-        RexNode newTopCondition =
-            RexUtil.composeConjunction(rexBuilder, newTopList, false);
-        @SuppressWarnings("SuspiciousNameCombination")
-        final JoinRel newTopJoin =
-            new JoinRel(
-                cluster, newBottomJoin, relA, newTopCondition,
-                JoinRelType.INNER, Collections.<String>emptySet());
-
-        final RelNode newProject =
-            CalcRel.createProject(newTopJoin, Mappings.asList(topMapping));
-
+        new RexPermuteInputsShuttle(topMapping, newBottomJoin, relA).visitList(intersecting, newTopList);
+        new RexPermuteInputsShuttle(topMapping, newBottomJoin, relA).visitList(bottomIntersecting, newTopList);
+        RexNode newTopCondition = RexUtil.composeConjunction(rexBuilder, newTopList, false);
+        @SuppressWarnings("SuspiciousNameCombination") final JoinRel newTopJoin = new JoinRel(cluster, newBottomJoin, relA, newTopCondition, JoinRelType.INNER, ImmutableSet.<String>of());
+        final RelNode newProject = CalcRel.createProject(newTopJoin, Mappings.asList(topMapping));
         call.transformTo(newProject);
     }
 
     /** Splits a condition into conjunctions that do or do not intersect with
      * a given bit set. */
-    static void split(
-        RexNode condition,
-        BitSet bitSet,
-        List<RexNode> intersecting,
-        List<RexNode> nonIntersecting)
-    {
+    static void split(RexNode condition, BitSet bitSet, List<RexNode> intersecting, List<RexNode> nonIntersecting) {
         for (RexNode node : RelOptUtil.conjunctions(condition)) {
             BitSet inputBitSet = RelOptUtil.InputFinder.bits(node);
             if (bitSet.intersects(inputBitSet)) {
@@ -309,21 +202,16 @@ public class PushJoinThroughJoinRule extends RelOptRule {
         }
     }
 
-    static Mappings.TargetMapping createShiftMapping(
-        int sourceCount, int... ints)
-    {
+    static Mappings.TargetMapping createShiftMapping(int sourceCount, int... ints) {
         int targetCount = 0;
         assert ints.length % 3 == 0;
         for (int i = 0; i < ints.length; i += 3) {
             final int length = ints[i + 2];
             targetCount += length;
         }
-        final Mappings.TargetMapping mapping =
-            Mappings.create(
-                MappingType.InverseSurjection,
-                sourceCount, // aCount + bCount + cCount,
-                targetCount); // cCount + bCount
-
+        final Mappings.TargetMapping mapping = Mappings.create(MappingType.InverseSurjection, // aCount + bCount + cCount,
+        sourceCount, // cCount + bCount
+        targetCount);
         for (int i = 0; i < ints.length; i += 3) {
             final int target = ints[i];
             final int source = ints[i + 1];
@@ -337,5 +225,3 @@ public class PushJoinThroughJoinRule extends RelOptRule {
         return mapping;
     }
 }
-
-// End PushJoinThroughJoinRule.java

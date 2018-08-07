@@ -15,33 +15,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 */
-package org.eigenbase.util;
+package org.eigenbase.util; 
 
-import java.awt.Toolkit;
-import java.io.*;
-import java.lang.Iterable;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.math.*;
-import java.net.*;
-import java.nio.charset.*;
-import java.sql.*;
-import java.text.*;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.jar.*;
-import java.util.logging.*;
-import java.util.regex.*;
+import java.awt.Toolkit; 
+import java.io.*; 
+import java.lang.Iterable; 
+import java.lang.reflect.Array; 
+import java.lang.reflect.Field; 
+import java.math.*; 
+import java.net.*; 
+import java.nio.charset.*; 
+import java.sql.*; 
+import java.text.*; 
+import java.util.*; 
+import java.util.concurrent.CopyOnWriteArrayList; 
+import java.util.jar.*; 
+import java.util.logging.*; 
+import java.util.regex.*; 
 
-import org.eigenbase.sql.validate.*;
+import org.eigenbase.sql.validate.*; 
 
-import net.hydromatic.linq4j.Ord;
+import net.hydromatic.linq4j.Ord; 
 
 /**
  * Miscellaneous utility functions.
  */
-public class Util
-{
+public  class  Util {
+	
     //~ Static fields/initializers ---------------------------------------------
 
     /**
@@ -54,30 +54,38 @@ public class Util
      */
     public static final String awtWorkaroundProperty =
         "org.eigenbase.util.AWT_WORKAROUND";
+	
 
     /**
      * System-dependent newline character.
      */
     public static final String lineSeparator =
         System.getProperty("line.separator");
+	
 
     /**
      * System-dependent file separator, for example, "/" or "\."
      */
     public static final String fileSeparator =
         System.getProperty("file.separator");
+	
 
     /**
      * Datetime format string for generating a timestamp string to be used as
      * part of a filename. Conforms to SimpleDateFormat conventions.
      */
     public static final String fileTimestampFormat = "yyyy-MM-dd_HH_mm_ss";
+	
 
     public static final Object [] emptyObjectArray = new Object[0];
+	
     public static final String [] emptyStringArray = new String[0];
+	
     public static final SqlMoniker [] emptySqlMonikerArray = new SqlMoniker[0];
+	
 
     private static boolean driversLoaded = false;
+	
 
     /**
      * Regular expression for a valid java identifier which contains no
@@ -85,11 +93,13 @@ public class Util
      */
     private static final Pattern javaIdPattern =
         Pattern.compile("[a-zA-Z_$][a-zA-Z0-9$]*");
+	
 
     /**
      * @see #loadLibrary(String)
      */
     private static Toolkit awtToolkit;
+	
 
     /**
      * Maps classes to the map of their enum values. Uses a weak map so that
@@ -98,6 +108,7 @@ public class Util
     private static final Map<Class, Map<String, ? extends Enum>>
         mapClazzToMapNameToEnum =
             new WeakHashMap<Class, Map<String, ? extends Enum>>();
+	
     public static final String [] spaces =
             {
                 "",
@@ -110,6 +121,7 @@ public class Util
                 "       ",
                 "        ",
             };
+	
 
     //~ Methods ----------------------------------------------------------------
 
@@ -124,6 +136,7 @@ public class Util
             discard(o);
         }
     }
+	
 
     /**
      * Does nothing with its argument. Call this method when you have a value
@@ -136,6 +149,7 @@ public class Util
             discard(i);
         }
     }
+	
 
     /**
      * Does nothing with its argument. Call this method when you have a value
@@ -148,6 +162,7 @@ public class Util
             discard(b);
         }
     }
+	
 
     /**
      * Does nothing with its argument. Call this method when you have a value
@@ -160,6 +175,7 @@ public class Util
             discard(d);
         }
     }
+	
 
     /**
      * Records that an exception has been caught but will not be re-thrown. If
@@ -176,6 +192,7 @@ public class Util
             logger.log(Level.FINER, "Discarding exception", e);
         }
     }
+	
 
     /**
      * Returns whether two objects are equal or are both null.
@@ -192,6 +209,7 @@ public class Util
             return s0.equals(s1);
         }
     }
+	
 
     /**
      * Returns a sub-list from a given position to the end.
@@ -199,6 +217,7 @@ public class Util
     public static <E> List<E> subList(List<E> list, int fromIndex) {
         return list.subList(fromIndex, list.size());
     }
+	
 
     /**
      * Returns whether two lists are equal to each other using shallow
@@ -222,6 +241,7 @@ public class Util
         }
         return true;
     }
+	
 
     /**
      * Combines two integers into a hash code.
@@ -232,6 +252,7 @@ public class Util
     {
         return (i << 4) ^ j;
     }
+	
 
     /**
      * Computes a hash code from an existing hash code and an object (which may
@@ -244,6 +265,7 @@ public class Util
         int k = (o == null) ? 0 : o.hashCode();
         return ((h << 4) | h) ^ k;
     }
+	
 
     /**
      * Computes a hash code from an existing hash code and an array of objects
@@ -266,6 +288,7 @@ public class Util
         }
         return h;
     }
+	
 
     /**
      * Computes a hash code over var args.
@@ -278,6 +301,7 @@ public class Util
         }
         return h;
     }
+	
 
     /**
      * Returns a set of the elements which are in <code>set1</code> but not in
@@ -295,6 +319,7 @@ public class Util
             return set;
         }
     }
+	
 
     /**
      * Computes <code>nlogn(n)</code> using the natural logarithm (or <code>
@@ -305,6 +330,7 @@ public class Util
     {
         return (d < Math.E) ? d : (d * Math.log(d));
     }
+	
 
     /**
      * Prints an object using reflection. We can handle <code>null</code>;
@@ -317,6 +343,7 @@ public class Util
     {
         print(pw, o, 0);
     }
+	
 
     public static void print(
         PrintWriter pw,
@@ -427,6 +454,7 @@ public class Util
             pw.print("}");
         }
     }
+	
 
     /**
      * Prints a string, enclosing in double quotes (") and escaping if
@@ -455,6 +483,7 @@ public class Util
             pw.print("\"");
         }
     }
+	
 
     public static void println(
         PrintWriter pw,
@@ -463,6 +492,7 @@ public class Util
         print(pw, o, 0);
         pw.println();
     }
+	
 
     /**
      * Formats a {@link BigDecimal} value to a string in scientific notation For
@@ -519,6 +549,7 @@ public class Util
         ret.append(e);
         return ret.toString();
     }
+	
 
     /**
      * Replaces every occurrence of <code>find</code> in <code>s</code> with
@@ -552,6 +583,7 @@ public class Util
         }
         return sb.toString();
     }
+	
 
     /**
      * Creates a file-protocol URL for the given file.
@@ -577,6 +609,7 @@ public class Util
         path = "file://" + path;
         return new URL(path);
     }
+	
 
     /**
      * Gets a timestamp string for use in file names. The generated timestamp
@@ -587,6 +620,7 @@ public class Util
         SimpleDateFormat sdf = new SimpleDateFormat(fileTimestampFormat);
         return sdf.format(new java.util.Date());
     }
+	
 
     /**
      * Converts double-quoted Java strings to their contents. For example,
@@ -603,6 +637,7 @@ public class Util
         String s1 = Util.replace(s2, "\\\\", "\\");
         return s1;
     }
+	
 
     /**
      * Converts an arbitrary string into a string suitable for use as a Java
@@ -669,6 +704,7 @@ public class Util
         }
         return buf.toString();
     }
+	
 
     /**
      * Materializes the results of a {@link java.util.Iterator} as a {@link
@@ -686,12 +722,14 @@ public class Util
         }
         return list;
     }
+	
 
     static boolean isStatic(java.lang.reflect.Member member)
     {
         int modifiers = member.getModifiers();
         return java.lang.reflect.Modifier.isStatic(modifiers);
     }
+	
 
     /**
      * @return true if s==null or if s.length()==0
@@ -700,6 +738,7 @@ public class Util
     {
         return (null == s) || (s.length() == 0);
     }
+	
 
     /**
      * Converts a list of a string, with commas between elements.
@@ -726,6 +765,7 @@ public class Util
         }
         return buf.toString();
     }
+	
 
     /**
      * Returns the connect string with which to connect to the 'Sales' test
@@ -736,6 +776,7 @@ public class Util
         loadDrivers();
         return SaffronProperties.instance().testJdbcUrl.get();
     }
+	
 
     private static synchronized void loadDrivers()
     {
@@ -756,6 +797,7 @@ public class Util
         }
         driversLoaded = true;
     }
+	
 
     /**
      * Returns the {@link Charset} object representing the value of {@link
@@ -772,21 +814,25 @@ public class Util
         return Charset.forName(
             SaffronProperties.instance().defaultCharset.get());
     }
+	
 
     public static Error newInternal()
     {
         return newInternal("(unknown cause)");
     }
+	
 
     public static Error newInternal(String s)
     {
         return new AssertionError("Internal error: " + s);
     }
+	
 
     public static Error newInternal(Throwable e)
     {
         return newInternal(e, "(unknown cause)");
     }
+	
 
     public static Error newInternal(Throwable e, String s)
     {
@@ -801,6 +847,7 @@ public class Util
         ae.initCause(e);
         return ae;
     }
+	
 
     /**
      * Retrieves messages in a exception and writes them to a string. In the
@@ -823,6 +870,7 @@ public class Util
         }
         return sb.toString();
     }
+	
 
     /**
      * Returns the stack trace of a throwable. Called from native code.
@@ -839,6 +887,7 @@ public class Util
         pw.flush();
         return sw.toString();
     }
+	
 
     /**
      * Checks a pre-condition.
@@ -862,6 +911,7 @@ public class Util
             throw newInternal("pre-condition failed: " + description);
         }
     }
+	
 
     /**
      * Checks a post-condition.
@@ -886,6 +936,7 @@ public class Util
             throw newInternal("post-condition failed: " + description);
         }
     }
+	
 
     /**
      * Checks an invariant.
@@ -899,6 +950,7 @@ public class Util
             throw newInternal("invariant violated: " + description);
         }
     }
+	
 
     /**
      * Returns a {@link java.lang.RuntimeException} indicating that a particular
@@ -935,6 +987,7 @@ public class Util
         }
         throw new UnsupportedOperationException(description);
     }
+	
 
     /**
      * Flags a piece of code as needing to be cleaned up before you check in.
@@ -1000,6 +1053,7 @@ public class Util
         }
         return argument;
     }
+	
 
     /**
      * Uses {@link System#loadLibrary(String)} to load a native library
@@ -1041,6 +1095,7 @@ public class Util
 
         System.loadLibrary(libName);
     }
+	
 
     /**
      * Returns whether an array of strings contains a given string among the
@@ -1064,6 +1119,7 @@ public class Util
         }
         return false;
     }
+	
 
     /**
      * Reads all remaining contents from a {@link java.io.Reader} and returns
@@ -1087,6 +1143,7 @@ public class Util
         }
         return sb.toString();
     }
+	
 
     /**
      * Closes a Jar, ignoring any I/O exception. This should only be
@@ -1105,6 +1162,7 @@ public class Util
             // intentionally suppressed
         }
     }
+	
 
     /**
      * Closes an InputStream, ignoring any I/O exception. This should only be
@@ -1123,6 +1181,7 @@ public class Util
             // intentionally suppressed
         }
     }
+	
 
     /**
      * Closes an OutputStream, ignoring any I/O exception. This should only be
@@ -1143,6 +1202,7 @@ public class Util
             // intentionally suppressed
         }
     }
+	
 
     /**
      * Closes a Reader, ignoring any I/O exception. This should only be used in
@@ -1161,6 +1221,7 @@ public class Util
             // intentionally suppressed
         }
     }
+	
 
     /**
      * Closes a Writer, ignoring any I/O exception. This should only be used in
@@ -1181,6 +1242,7 @@ public class Util
             // intentionally suppressed
         }
     }
+	
 
     /**
      * Closes a Statement, ignoring any SQL exception. This should only be used
@@ -1199,6 +1261,7 @@ public class Util
             // intentionally suppressed
         }
     }
+	
 
     /**
      * Closes a Connection, ignoring any SQL exception. This should only be used
@@ -1217,6 +1280,7 @@ public class Util
             // intentionally suppressed
         }
     }
+	
 
     /**
      * Trims trailing spaces from a string.
@@ -1240,6 +1304,7 @@ public class Util
         }
         return "";
     }
+	
 
     /**
      * Pads a string with spaces up to a given length.
@@ -1260,6 +1325,7 @@ public class Util
         }
         return sb.toString();
     }
+	
 
     /** Converts an iterable to a string. */
     public static <T> String toString(
@@ -1276,6 +1342,7 @@ public class Util
         buf.append(end);
         return buf.toString();
     }
+	
 
     /**
      * Converts a Java timezone to POSIX format, so that the boost C++ library
@@ -1412,6 +1479,7 @@ public class Util
             true);
         return buf.toString();
     }
+	
 
     /**
      * Writes a daylight savings time transition to a POSIX timezone
@@ -1507,6 +1575,7 @@ public class Util
             appendPosixTime(buf, time);
         }
     }
+	
 
     /**
      * Given a time expressed in milliseconds, append the time formatted as
@@ -1544,6 +1613,7 @@ public class Util
         }
         buf.append(seconds);
     }
+	
 
     /**
      * Parses a locale string.
@@ -1567,6 +1637,7 @@ public class Util
                 "bad locale string '" + localeString + "'");
         }
     }
+	
 
     /**
      * Runs an external application.
@@ -1595,6 +1666,7 @@ public class Util
             appInput,
             appOutput);
     }
+	
 
     /**
      * Constructs a {@link ProcessBuilder} to run an external application.
@@ -1619,6 +1691,7 @@ public class Util
         buf.setLength(0);
         return new ProcessBuilder(cmdarray);
     }
+	
 
 
     /**
@@ -1687,6 +1760,7 @@ public class Util
         }
         return status;
     }
+	
 
     /**
      * Converts a list whose members are automatically down-cast to a given
@@ -1708,6 +1782,7 @@ public class Util
     {
         return new CastingList<E>(list, clazz);
     }
+	
 
     /**
      * Converts a iterator whose members are automatically down-cast to a given
@@ -1746,6 +1821,7 @@ public class Util
             }
         };
     }
+	
 
     /**
      * Converts an {@link Iterable} whose members are automatically down-cast to
@@ -1770,6 +1846,7 @@ public class Util
             }
         };
     }
+	
 
     /**
      * Makes a collection of untyped elements appear as a list of strictly typed
@@ -1800,6 +1877,7 @@ public class Util
             }
         };
     }
+	
 
     public static <E> Collection<E> filter(
         final Collection<?> collection,
@@ -1833,6 +1911,7 @@ public class Util
             }
         };
     }
+	
 
     /**
      * Returns a subset of a list containing only elements of a given type.
@@ -1856,6 +1935,7 @@ public class Util
         }
         return result;
     }
+	
 
     /**
      * Converts a {@link Properties} object to a <code>{@link Map}&lt;String,
@@ -1882,6 +1962,7 @@ public class Util
     {
         return (Map) properties;
     }
+	
 
     /**
      * Returns a hashmap with given contents.
@@ -1911,6 +1992,7 @@ public class Util
         }
         return map;
     }
+	
 
     /**
      * Returns an exception indicating that we didn't expect to find this
@@ -1927,6 +2009,7 @@ public class Util
             + "' for enumeration '" + value.getDeclaringClass().getName()
             + "' in this context");
     }
+	
 
     /**
      * Creates a map of the values of an enumeration by name.
@@ -1949,6 +2032,7 @@ public class Util
         }
         return Collections.unmodifiableMap(map);
     }
+	
 
     /**
      * Returns the value of an enumeration with a particular name.
@@ -1975,6 +2059,7 @@ public class Util
         }
         return mapNameToEnum.get(name);
     }
+	
 
     /**
      * Returns an iterable over the bits in a bitmap that are set to '1'.
@@ -2021,6 +2106,7 @@ public class Util
             }
         };
     }
+	
 
     /**
      * Converts a bitset to a list.
@@ -2040,6 +2126,7 @@ public class Util
         }
         return list;
     }
+	
 
     /**
      * Converts a bitset to an array.
@@ -2052,6 +2139,7 @@ public class Util
         final List<Integer> list = toList(bitSet);
         return list.toArray(new Integer[list.size()]);
     }
+	
 
     /**
      * Creates a bitset with given bits set.
@@ -2070,6 +2158,7 @@ public class Util
         }
         return bitSet;
     }
+	
 
     /**
      * Creates a bitset with given bits set.
@@ -2088,6 +2177,7 @@ public class Util
         }
         return bitSet;
     }
+	
 
     /**
      * Creates a bitset with given bits set.
@@ -2106,6 +2196,7 @@ public class Util
         }
         return bitSet;
     }
+	
 
     /**
      * Creates a bitset with bits from {@code fromIndex} (inclusive) to
@@ -2128,6 +2219,7 @@ public class Util
         }
         return bitSet;
     }
+	
 
     /**
      * Returns a string of N spaces.
@@ -2136,6 +2228,7 @@ public class Util
     {
         return SpaceList.INSTANCE.get(i);
     }
+	
 
     /** Creates a list that returns every {@code n}th element of a list,
      * starting at element {@code k}.
@@ -2165,6 +2258,7 @@ public class Util
             }
         };
     }
+	
 
     /** Returns whether a bit set contains every bit of another bit set. */
     public static boolean isSupersetOf(BitSet set0, BitSet set1) {
@@ -2181,10 +2275,12 @@ public class Util
         }
         return true;
     }
+	
 
     public static <T> T first(T t0, T t1) {
         return t0 != null ? t0 : t1;
     }
+	
 
     public static List<Integer> range(final int start, final int end) {
         return new AbstractList<Integer>() {
@@ -2197,6 +2293,7 @@ public class Util
             }
         };
     }
+	
 
     /** Converts an underscore-separated name into a camelCase name.
      * For example, {@code uncamel("MY_JDBC_DRIVER")} returns "myJdbcDriver". */
@@ -2218,6 +2315,7 @@ public class Util
         }
         return buf.toString();
     }
+	
 
     /** Converts a camelCase name into an upper-case underscore-separated name.
      * For example, {@code camelToUpper("myJdbcDriver")} returns
@@ -2235,6 +2333,7 @@ public class Util
         }
         return buf.toString();
     }
+	
 
     /** Returns whether the elements of {@code list} are distinct. */
     public static <E> boolean isDistinct(List<E> list) {
@@ -2246,27 +2345,32 @@ public class Util
         }
         return true;
     }
+	
 
     //~ Inner Classes ----------------------------------------------------------
 
     /**
      * Exception used to interrupt a tree walk of any kind.
      */
-    public static class FoundOne
-        extends RuntimeException
-    {
+    public static  class  FoundOne 
+        extends RuntimeException {
+		
         private final Object node;
+		
 
         public FoundOne(Object node)
         {
             this.node = node;
         }
+		
 
         public Object getNode()
         {
             return node;
         }
-    }
+
+	}
+	
 
     // Experimental support for functional programming follows...
 
@@ -2275,14 +2379,26 @@ public class Util
      *
      * @param <R> Result type.
      */
-    interface Function0<R> {
+     
+
+    // Experimental support for functional programming follows...
+
+    /**
+     * Function of arity 0.
+     *
+     * @param <R> Result type.
+     */
+      Function0  {
+		
         /**
          * Applies the function.
          *
          * @return Result value.
          */
-        R apply();
-    }
+        
+
+	}
+	
 
     /**
      * Function of arity 1.
@@ -2290,15 +2406,18 @@ public class Util
      * @param <R> Result type.
      * @param <T0> Type of parameter 0.
      */
-    public interface Function1<R, T0> {
+        Function1  {
+		
         /**
          * Applies the function.
          *
          * @param p0 Parameter 0.
          * @return Result value.
          */
-        R apply(T0 p0);
-    }
+        
+
+	}
+	
 
     /**
      * Function of arity 2.
@@ -2307,7 +2426,8 @@ public class Util
      * @param <T0> Type of parameter 0.
      * @param <T1> Type of parameter 1.
      */
-    public interface Function2<R, T0, T1> {
+        Function2  {
+		
         /**
          * Applies the function.
          *
@@ -2315,21 +2435,21 @@ public class Util
          * @param p1 Parameter 1.
          * @return Result value.
          */
-        R apply(T0 p0, T1 p1);
-    }
+        
 
-    @SuppressWarnings({"unchecked"})
-    public static class Functions
-    {
+	}
+	
+
+        Functions {
+		
         /**
          * Returns a function of arity 0 that does nothing.
          *
          * @param <R> Return type
          * @return Function that does nothing.
          */
-        public static <R> Function0<R> ignore0() {
-            return Ignore.INSTANCE;
-        }
+        
+		
 
         /**
          * Returns a function of arity 1 that does nothing.
@@ -2338,9 +2458,8 @@ public class Util
          * @param <T0> Type of parameter 0
          * @return Function that does nothing.
          */
-        public static <R, T0> Function1<R, T0> ignore1() {
-            return Ignore.INSTANCE;
-        }
+        
+		
 
         /**
          * Returns a function of arity 2 that does nothing.
@@ -2350,41 +2469,37 @@ public class Util
          * @param <T1> Type of parameter 1
          * @return Function that does nothing.
          */
-        public static <R, T0, T1> Function2<R, T0, T1> ignore2() {
-            return Ignore.INSTANCE;
-        }
-    }
+        
 
-    private static final class Ignore<R, T0, T1>
-        implements
-        Function0<R>,
-        Function1<R, T0>,
-        Function2<R, T0, T1>
-    {
-        public R apply()
-        {
-            return null;
-        }
+	}
+	
 
-        public R apply(T0 p0)
-        {
-            return null;
-        }
+        Ignore  
+         {
+		
+        
+		
 
-        public R apply(T0 p0, T1 p1)
-        {
-            return null;
-        }
+        
+		
 
-        static final Ignore INSTANCE = new Ignore();
-    }
+        
+		
 
-    private static class SpaceList extends CopyOnWriteArrayList<String> {
+        
+
+	}
+	
+
+    private static  class  SpaceList  extends CopyOnWriteArrayList<String> {
+		
         private static final List<String> INSTANCE = new SpaceList();
+		
 
         public SpaceList() {
             populate("               ");
         }
+		
 
         @Override
         public String get(int index) {
@@ -2400,6 +2515,7 @@ public class Util
                 }
             }
         }
+		
 
         /** Populates this list with all prefix strings of a given string. All
          * of the prefix strings share the same backing array of chars. */
@@ -2420,7 +2536,7 @@ public class Util
                     }
                 });
         }
-    }
-}
 
-// End Util.java
+	}
+
+}
